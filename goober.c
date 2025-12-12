@@ -18,6 +18,7 @@
 * @param incoming_buffer_size Size of the incoming buffer in bytes.
 * @param header Pointer to the header struct to be populated.
 * @param payload Pointer to the payload buffer to be populated.
+* @param payload_buffer_size Size of the allocated payload buffer in bytes.
 * @param payload_size Pointer to the size of the payload in bytes.
 * @return int Error code. 0 if successful, otherwise a negative error code.
 */
@@ -69,15 +70,15 @@ int goober_deserialize(uint8_t *incoming_buffer, size_t incoming_buffer_size, go
 }
 
 /**
- * @brief 
+ * @brief Serialize a GOOBER packet header and payload into a buffer of bytes.
  * 
- * @param header 
- * @param payload_buffer 
- * @param payload_size 
- * @param serialized_buffer 
- * @param serialized_buffer_size 
- * @param serialized_packet_size 
- * @return int 
+ * @param header Pointer to the header struct to be serialized.
+ * @param payload_buffer Pointer to the payload buffer to be serialized.
+ * @param payload_size Size of the payload buffer in bytes.
+ * @param serialized_buffer Pointer to the buffer to be populated with the serialized packet.
+ * @param serialized_buffer_size Size of the allocated serialized buffer in bytes.
+ * @param serialized_packet_size Pointer to the size of the serialized packet in bytes.
+ * @return int Error code. 0 if successful, otherwise a negative error code.
  */
 int goober_serialize(goober_header_t header, uint8_t *payload_buffer, size_t payload_size, uint8_t *serialized_buffer, size_t serialized_buffer_size, size_t *serialized_packet_size)
 {
