@@ -10,7 +10,7 @@ jobs:
       - name: Set up Git repository
         uses: actions/checkout@v6
         with:
-          fetch-depth: 2
+          fetch-depth: 0
       
       - name: Check if goober.tex changed since last commit on main branch.
       # avoid compiling the code and filling up commit history with unnecessary commits

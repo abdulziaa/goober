@@ -12,6 +12,32 @@
 #include "goober.h"
 
 /**
+ * @brief 16 Bit Fletcher Checksum. Fastest one that I could easily find online.
+ * 
+ * @param buf Pointer to buffer of bytes to have checksum calculated over. 
+ * @param len Length of the buffer of bytes to have checksum calculated over.
+ * @return uint16_t The 16 bit fletcher checksum.
+ */
+uint16_t fletcher16(const uint8_t *buf, size_t len) { // see https://en.wikipedia.org/wiki/Fletcher%27s_checksum#:~:text=%25%200xff)%3B-,Optimizations,-%5Bedit%5D
+	uint32_t c0, c1;
+
+	for (c0 = c1 = 0; len > 0; ) {
+		size_t blocklen = len;
+		if (blocklen > 5802) {
+			blocklen = 5802;
+		}
+		len -= blocklen;
+		do {
+			c0 = c0 + *buf++;
+			c1 = c1 + c0;
+		} while (--blocklen);
+		c0 = c0 % 255;
+		c1 = c1 % 255;
+   }
+   return (c1 << 8 | c0);
+}
+
+/**
 * @brief Deserialize a buffer of bytes into a GOOBER packet header and payload.
 * 
 * @param incoming_buffer Pointer to the incoming buffer of bytes to be deserialized.

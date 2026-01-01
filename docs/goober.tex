@@ -6,10 +6,8 @@
 \usepackage{fancyhdr}
 
 \newcommand{\subtitle}[1]{%
-  \posttitle{%
-    \par\end{center}
-    \begin{center}\large#1\end{center}
-    \vskip0.5em}%
+\posttitle{%
+\par\end{center} \begin{center}\large#1\end{center} \vskip0.5em}%
 }
 
 \pagestyle{fancy}
@@ -20,153 +18,252 @@
 \renewcommand{\footrulewidth}{0.4pt}
 
 \title{
-  \includegraphics[width=0.25\linewidth]{goober logo.png}\\[0.5em]
-  \textbf{General Operations Over Basic Embedded Radio}
-}
-\subtitle{A lightweight digital communications protocol.}
+\includegraphics[width=0.25\linewidth]{goober logo.png}
+\\[0.5em]
+\textbf{General Operations Over Basic Embedded Radio} }
+\subtitle{A flexible digital communications protocol.}
 \author{Abdul Zia, Arizona State University}
-\date{November 26th, 2025 \\ Version 1.00.0}
+\date{November 26th, 2025 \\
+Version 1.00.0}
 
 \begin{document}
-\maketitle
-\thispagestyle{fancy}
+    \maketitle
+    \thispagestyle{fancy}
 
-\newpage
+    \newpage
 
-\section{Introduction}
+    \section{Introduction}
 
-\noindent
-The General Operations Over Basic Embedded Radio (abbreviated GOOBER) protocol is designed for use in vehicle avionics. The GOOBER protocol is a specification that dictates how command and control exchanges should take place between devices communicating on the same frequency, channel, or bus.
-\\\\
-GOOBER is designed to communicate through various physical layers such as LoRa, 4G LTE, TCP/UDP, Bluetooth, etc. to create a network of interconnected devices.
-\\\\
-While networking multiple devices is the end goal, GOOBER's purpose is to accommodate one-way, half-duplex, and full-duplex communications between devices on a shared communication path.
-\\\\
-GOOBER is not sophisticated by nature. It is created with simplicity and expandability in mind. It should be easy to implement into any embedded system.
+    \noindent
+    The General Operations Over Basic Embedded Radio (abbreviated GOOBER)
+    protocol is designed for use in vehicle avionics. The GOOBER protocol dictates how command and control exchanges should take place between devices communicating on the same frequency, channel, or bus. \\
+    \\
+    GOOBER is designed to be used through various physical layers such as LoRa, 4G LTE, TCP/UDP, Bluetooth, etc. to create a network of interconnected devices. While networking multiple devices is the end goal, GOOBER's primary purpose is to facilitate communications between devices on a shared communication path.\\
+    \\
+    Unless otherwise specified, GOOBER is little-endian everywhere.
 
+    \section{Packet Structure}
 
-\section{Packet Structure}
+    At its core, GOOBER is just a structure of bytes arranged in a meaningful
+    manner. The structure of a GOOBER packet with N payload bytes is shown below.
 
-\noindent
-At its core, GOOBER is just a structure of bytes arranged in a meaningful manner. The structure of a GOOBER packet is shown below.
-\\
+    \begin{table}[h]
+        \centering
+        \begin{tabular}{|c|c|c|c|c|c|}
+            \hline
+            \textbf{Name}           & DEV\_ID & DEV\_MODE & SEQ\_ID & MSG\_CLS & Payload \\
+            \hline
+            \textbf{Size (bytes)}   & 1       & 1         & 1       & 1        & N   \\
+            \hline
+            \textbf{Offset (bytes)} & 0       & 1         & 2       & 3        & 4       \\
+            \hline
+        \end{tabular}
+    \end{table}
 
-\begin{table}[h]
-    \centering
-    \begin{tabular}{|c|c|c|c|c|c|}
-        \hline
+    \subsection{DEV\_ID Byte}
+    
+    \subsubsection{Unique device identifiers}
+    Each device on a GOOBER network has a unique device identifier (DEV\_ID) represented as an unsigned 8 bit integer (0-255). Users implementing the GOOBER protocol are responsible for preventing duplicate device identifiers in their network.
+    
+    \subsubsection{Segmentation of device identifier range}
+    It's recommended to segment device IDs based on the different physical layers present in a network. For example, devices numbered 0-16 can be allocated for LoRa radios, devices numbered 17-32 can be allocated for Bluetooth devices, and so on.
 
-        \textbf{Name} 
-            & DEV\_ID & DEV\_MODE & SEQ\_ID & MSG\_CLS & PAYLOAD\\ \hline
+    \subsubsection{DEV\_ID byte arrangement}
+    \begin{table}[h]
+        \centering
+        \begin{tabular}{|c|c|c|c|c|c|c|c|c|}
+            \hline
+            \textbf{Bit}   & 0     & 1     & 2     & 3     & 4     & 5     & 6     & 7     \\
+            \hline
+            \textbf{Value} & ID[0] & ID[1] & ID[2] & ID[3] & ID[4] & ID[5] & ID[6] & ID[7] \\
+            \hline
+        \end{tabular}
+    \end{table}
 
-        \textbf{Size (bytes)}
-            & 1 & 1 & 1 & 1 & 1 + n \\ \hline
+    \subsection{DEV\_MODE Byte}
+    GOOBER packets include device mode (DEV\_MODE) bits that convey important information about the packet's features.
+    
+    \subsubsection{Transmission Mode}
+    Transmissions on the GOOBER network can be simplex, half-duplex, or full duplex. Transmission mode 1 indicates a simplex link. Transmission mode 2 indicates a half-duplex link. Transmission mode 3 indicates a
+    full-duplex link. Transmission mode 0 is an invalid/error mode. Devices in simplex will not listen for packets and shall continually transmit while their device mode is 1.
 
-        \textbf{Offset (bytes)} 
-            & 0 & 1 & 2 & 3 & 4 \\ \hline
-    \end{tabular}
-\end{table}
+    \subsubsection{Intent Bit}
+    In half-duplex transmissions, the transmitter may want to transmit another packet before switching roles in the communication exchange. The intent bit indicates this behavior. Receivers in half-duplex communication shall continue to listen for the next packet if they receive a packet with an intent bit of 1. An intent bit of 0 in half-duplex communication indicates that the transmitter will listen for packets immediately after transmitting.
 
-\noindent For a detailed description of each byte's structure and usage, see the below subsections.
+    \subsubsection{Size Bit}
+    Certain physical layers may already transmit the size of the packet, so including the size of the packet may be redundant. If the size bit is 1, a 16-bit unsigned integer representing the length of the payload data in bytes will be appended to the front of the payload data.
 
-\subsection{DEV\_ID}
-Each device on the GOOBER network has a unique device ID, represented as an unsigned integer of 8 bits. This can be any number between 0 and 255, allowing a maximum of 256 devices in one network.
-\\\\
-The DEV\_ID byte uses the following arrangement:
+    \subsubsection{Checksum Bit}
+    Certain physical layers like LoRa have CRC/Checksums built-in, so including a checksum in the packet may be redundant. If the checksum bit is 1, a 16 bit fletcher checksum is appended to the end of the payload data. The checksum is calculated over the entire length of the serialized packet before transmission. This checksum is included in the calculation of the total size of the payload, if that is included (see Size Bit above).
+    
+    \subsubsection{Command-only Bit}
+    Certain command-and-control exchanges may not require payload data. If the command-only bit is 1, there is no payload data included in the packet.\\
+    \\
+    If the checksum bit is 1, the checksum bytes are the only payload data transmitted. The size bit shall be 0 if the command-only bit is 1, since the packet size can only be 4 (no checksum bytes) or 6 bytes (checksum bytes) in length.
+    
+    \subsubsection{DEV\_MODE byte arrangement}
 
-\begin{table}[h]
-    \centering
-    \begin{tabular}{|c|c|c|c|c|c|c|c|c|}
+    \begin{table}[h]
+        \centering
+        \begin{tabular}{|c|c|c|c|c|c|c|c|c|}
+            \hline
+            \textbf{Bit}   & 0               & 1               & 2          & 3     & 4     & 5     & 6     & 7     \\
+            \hline
+            \textbf{Value} & T.Mode LSB & T.Mode MSB & Intent Bit & Size Bit & Checksum Bit & Rsvd. & Rsvd. & Rsvd. \\
+            \hline
+        \end{tabular}
+    \end{table}
+
+    \begin{itemize}
+        \item Bit 0: Transmission mode LSB.
+        \item Bit 1: Transmission mode MSB.
+        \item Bit 2: Intent bit. 
+        \item Bit 3: Size bit. 
+        \item Bit 4: Checksum bit.
+        \item Bit 5: Command-only bit.
+
+        \item Bits 6-7: Reserved for future use.
+    \end{itemize}
+
+    \subsection{SEQ\_ID Byte}
+    The SEQ\_ID is an unsigned 8-bit integer that increments with each transmission.
+    This allows receivers to detect if any packets were dropped or received out
+    of order during communication. \\
+    \\
+    The sequence ID wraps around from 255 to 0 after reaching its maximum value.
+    Each device maintains its own sequence counter that increments with every packet
+    transmitted.
+    The SEQ\_ID should not used to determine the timestamp of a transmission. It is not time dependent.
+    
+    \subsubsection{SEQ\_ID byte arrangement}
+
+    \begin{table}[h]
+        \centering
+        \begin{tabular}{|c|c|c|c|c|c|c|c|c|}
+            \hline
+            \textbf{Bit}   & 0      & 1      & 2      & 3      & 4      & 5      & 6      & 7      \\
+            \hline
+            \textbf{Value} & SEQ[0] & SEQ[1] & SEQ[2] & SEQ[3] & SEQ[4] & SEQ[5] & SEQ[6] & SEQ[7] \\
+            \hline
+        \end{tabular}
+    \end{table}
+
+    \subsection{MSG\_CLS Byte}
+    The message class (MSG\_CLS) byte is an unsigned 8-bit integer ranging from 0x01 to 0xFE that
+    indicates the type of the payload/command being sent. Message classes are
+    stored in a lookup table on each device in the network and are application-dependent.\\
+    \\
+    Special values:
+    \begin{itemize}
+        \item 0x00: Reserved.
+        \item 0xFF: Reserved.
+    \end{itemize}
+
+    \subsubsection{MSG\_CLS byte arrangement}
+
+    \begin{table}[h]
+        \centering
+        \begin{tabular}{|c|c|c|c|c|c|c|c|c|}
+            \hline
+            \textbf{Bit}   & 0      & 1      & 2      & 3      & 4      & 5      & 6      & 7      \\
+            \hline
+            \textbf{Value} & CLS[0] & CLS[1] & CLS[2] & CLS[3] & CLS[4] & CLS[5] & CLS[6] & CLS[7] \\
+            \hline
+        \end{tabular}
+    \end{table}
+
+    \subsection{Payload Bytes}
+    Each message class (MSG\_CLS) has an accompanying payload type N bytes in length. This payload type is dependent on the user's application.
+
+    \subsubsection{Size Bytes}
+    If the packet's size bit (DEV\_MODE[3]) is 1, a 16-bit unsigned integer \textbf{N} representing the length of the payload data in bytes will be appended to the front of the payload data. If the size bit is 1, the length of the payload data in bytes cannot exceed 65535.
+
+    \subsubsection{Checksum Bytes}
+    If the checksum bit (DEV\_MODE[4]) is 1, a 16 bit fletcher checksum is appended to the end of the payload data. The checksum is calculated over the entire length of the serialized packet before transmission. This checksum is included in the calculation of the total size of the payload, if that is included (see Size Bytes above).
+
+    \subsubsection{Command-Only Exception}
+    If the command-only bit (DEV\_MODE[5]) is 1, there is no payload data included in the packet (N=0).\\
+    \\
+    If the checksum bit is 1, the checksum bytes are the only payload data transmitted. The size bit shall be 0 if the command-only bit is 1, since the packet size can only be 4 (no checksum bytes) or 6 bytes (checksum bytes) in length.
+
+    \subsubsection{Payload Byte Arrangement, Size and Checksum Included}
+    
+    \begin{center}
+    \begin{tabular}{|c|c|c|c|}
     \hline
-    \textbf{Bit}
-        & 0 & 1 & 2 & 3 & 4 & 5 & 6 & 7 \\ \hline
-    \textbf{Value}
-    & ID[0] & ID[1] & ID[2] & ID[3] & ID[4] & ID[5] & ID[6] & ID[7]\\ \hline
-    \end{tabular}
-\end{table}
-
-\noindent Device IDs are important in identifying where a GOOBER packet originates from, and should not be duplicated across devices on the same network. Unique device IDs are crucial for allowing receivers to relay information across multiple physical layers.
-\\\\
-It is recommended to segment device IDs based on the different physical layers present in a network. For example, devices 0-16 can be reserved for LoRa radios, devices 17-32 can be reserved for Bluetooth devices, and so on.
-\\\\
-
-\subsection{DEV\_MODE}
-Transmissions on the GOOBER network can be one-way, half-duplex, or full duplex. The DEV\_MODE byte ensures that transmitters and receivers use proper sequencing to avoid conflicts when using a shared communication path.
-\\\\
-Device mode 0 is an invalid/error mode. Device mode 1 indicates a one-way link. Device mode 2 indicates a half-duplex link. Device mode 3 indicates a full-duplex link.
-\\\\
-The DEV\_MODE byte uses the following arrangement:
-
-\begin{table}[h]d
-    \centering
-    \begin{tabular}{|c|c|c|c|c|c|c|c|c|}
+    \textbf{Byte Offset} & \textbf{Field} & \textbf{Size (bytes)} \\
     \hline
-    \textbf{Bit}
-        & 0 & 1 & 2 & 3 & 4 & 5 & 6 & 7 \\ \hline
-    \textbf{Value}
-        & Device Mode LSB & Device Mode MSB & Intent Bit & Rsvd. & Rsvd. & Rsvd. & Rsvd. & Rsvd.\\ \hline
-    \end{tabular}
-\end{table}
-
-\begin{itemize}
-    \item Bit 0: Device mode LSB.
-    \item Bit 1: Device mode MSB.
-    \item Bit 2: Intent bit. This is used in half-duplex communication. When this bit is 1, the transmitting device indicates that it intends to transmit another packet on the same communication path immediately.
-    \item Bits 3-7: Reserved for future use.
-\end{itemize}
-
-\subsection{SEQ\_ID}
-The SEQ\_ID byte is an unsigned 8-bit integer that increments with each transmission. This allows receivers to detect if any packets were dropped or received out of order during communication.
-\\\\
-The SEQ\_ID byte uses the following arrangement:
-
-\begin{table}[h]
-    \centering
-    \begin{tabular}{|c|c|c|c|c|c|c|c|c|}
+    0--1 & Size & 2\\
     \hline
-    \textbf{Bit}
-        & 0 & 1 & 2 & 3 & 4 & 5 & 6 & 7 \\ \hline
-    \textbf{Value}
-    & SEQ[0] & SEQ[1] & SEQ[2] & SEQ[3] & SEQ[4] & SEQ[5] & SEQ[6] & SEQ[7]\\ \hline
-    \end{tabular}
-\end{table}
-
-\noindent The sequence ID wraps around from 255 to 0 after reaching its maximum value. Each device maintains its own sequence counter that increments with every packet transmitted.
-\\\\
-The SEQ\_ID should not used to determine the timestamp of a transmission. It is not time dependent.
-
-\subsection{MSG\_CLS}
-The MSG\_CLS byte is an unsigned 8-bit integer ranging from 0x01 to 0xFE that indicates the message class of the payload being sent. Message classes are stored in a lookup table on each device and are application-dependent.
-\\\\
-Special values:
-\begin{itemize}
-    \item 0x00: Reserved.
-    \item 0xFF: Reserved.
-\end{itemize}
-
-The MSG\_CLS byte uses the following arrangement:
-
-\begin{table}[h]
-    \centering
-    \begin{tabular}{|c|c|c|c|c|c|c|c|c|}
+    2--(1+N) & Payload Data & $N$ \\
     \hline
-    \textbf{Bit}
-        & 0 & 1 & 2 & 3 & 4 & 5 & 6 & 7 \\ \hline
-    \textbf{Value}
-    & CLS[0] & CLS[1] & CLS[2] & CLS[3] & CLS[4] & CLS[5] & CLS[6] & CLS[7]\\ \hline
+    (2+N)--(3+N) & Checksum & 2\\
+    \hline
     \end{tabular}
-\end{table}
+    \end{center}
 
-\subsection{PAYLOAD}
-The PAYLOAD section contains the actual data being transmitted. It consists of a length byte followed by the payload data.
-\begin{itemize}
-    \item \textbf{Length Byte}: The first byte is an unsigned 8-bit integer representing the length of the payload data in bytes (0-255).
-    \item \textbf{Payload Data}: The remaining N bytes contain the actual message content, where N is the value specified in the length byte.
-\end{itemize}
+    \subsubsection{Payload Byte Arrangement, Size Only}
+    
+    \begin{center}
+    \begin{tabular}{|c|c|c|c|}
+    \hline
+    \textbf{Byte Offset} & \textbf{Field} & \textbf{Size (bytes)} \\
+    \hline
+    0--1 & Size & 2\\
+    \hline
+    2--(1+N) & Payload Data & $N$ \\
+    \hline
+    \end{tabular}
+    \end{center}
 
-\noindent
-The minimum payload size is 0 bytes. The maximum payload size is 250 bytes. This is to limit the overall size of a GOOBER packet to be less than 256 bytes.
+    \subsubsection{Payload Byte Arrangement, Checksum Only}
+    
+    \begin{center}
+    \begin{tabular}{|c|c|c|c|}
+    \hline
+    \textbf{Byte Offset} & \textbf{Field} & \textbf{Size (bytes)} \\
+    \hline
+    0 -- (N-1) & Payload Data & $N$ \\
+    \hline
+    N--(1+N) & Checksum & 2\\
+    \hline
+    \end{tabular}
+    \end{center}
+
+    \subsubsection{Payload Byte Arrangement, No Size or Checksum}
+    
+    \begin{center}
+    \begin{tabular}{|c|c|c|c|}
+    \hline
+    \textbf{Byte Offset} & \textbf{Field} & \textbf{Size (bytes)} \\
+    \hline
+    0 -- (N-1) & Payload Data & $N$ \\
+    \hline
+    \end{tabular}
+    \end{center}
 
 
+    \section{Appendix}
 
+    \subsection{Fletcher Checksum}
+    Example code for calculating the 16 bit fletcher checksum is below:
+
+\begin{verbatim}
+uint16_t Fletcher16( uint8_t *data, int count )
+{
+   uint16_t sum1 = 0;
+   uint16_t sum2 = 0;
+   int index;
+
+   for ( index = 0; index < count; ++index )
+   {
+      sum1 = (sum1 + data[index]) % 255;
+      sum2 = (sum2 + sum1) % 255;
+   }
+
+   return (sum2 << 8) | sum1;
+}
+\end{verbatim}
+    
+    
 \end{document}
