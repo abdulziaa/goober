@@ -140,3 +140,35 @@ int goober_serialize(goober_header_t header, uint8_t *payload_buffer, size_t pay
 
     return 0; // success!
 }
+
+uint8_t goober_device_mode(uint8_t transmission_mode, bool intent_bit, bool size_bit, bool checksum_bit, bool command_only_bit)
+{
+    uint8_t dev_mode = 0;
+    
+    // Set transmission mode (bits 0-1)
+    dev_mode |= (transmission_mode & 0x03);
+    
+    // Set intent bit (bit 2)
+    if (intent_bit) {
+        dev_mode |= (1 << 2);
+    }
+    
+    // Set size bit (bit 3)
+    if (size_bit) {
+        dev_mode |= (1 << 3);
+    }
+    
+    // Set checksum bit (bit 4)
+    if (checksum_bit) {
+        dev_mode |= (1 << 4);
+    }
+    
+    // Set command-only bit (bit 5)
+    if (command_only_bit) {
+        dev_mode |= (1 << 5);
+    }
+    
+    // Bits 6-7 are reserved and remain 0
+    
+    return dev_mode;
+}
