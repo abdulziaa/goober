@@ -4,6 +4,8 @@ if(ESP_PLATFORM) # don't run these lines of code on non-ESP platforms!
     idf_component_register(
         SRCS
             "goober.c"
+        INCLUDE_DIRS
+            "."
     )
 endif()
 

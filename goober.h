@@ -26,6 +26,7 @@ typedef struct goober_header {
     uint8_t dev_mode;
     uint8_t seq_id;
     uint8_t msg_cls;
+    uint8_t payload_length;
 } goober_header_t;
 
 int goober_deserialize(uint8_t *incoming_buffer, size_t incoming_buffer_size, goober_header_t *header, uint8_t *payload, size_t payload_buffer_size, size_t *payload_size);
