@@ -21,6 +21,12 @@ enum goober_error_t {
     GOOBER_ERROR_INVALID_INPUT = -99,
 };
 
+enum goober_transmission_mode_t {
+    GOOBER_MODE_SIMPLEX = 1,
+    GOOBER_MODE_HALF_DUPLEX = 2,
+    GOOBER_MODE_FULL_DUPLEX = 3,
+};
+
 typedef struct goober_header {
     uint8_t dev_id;
     uint8_t dev_mode;
@@ -30,5 +36,5 @@ typedef struct goober_header {
 } goober_header_t;
 
 int goober_deserialize(uint8_t *incoming_buffer, size_t incoming_buffer_size, goober_header_t *header, uint8_t *payload, size_t payload_buffer_size, size_t *payload_size);
-int goober_serialize(goober_header_t header, uint8_t *payload_buffer, size_t payload_size, uint8_t *serialized_buffer, size_t serialized_buffer_size, size_t *serialized_packet_size);
+int goober_serialize(goober_header_t header, uint8_t *payload_buffer, size_t payload_size, uint8_t *serialized_buffer, size_t serialized_buffer_size, uint8_t *serialized_packet_size);
 uint8_t goober_device_mode(uint8_t transmission_mode, bool intent_bit, bool size_bit, bool checksum_bit, bool command_only_bit);

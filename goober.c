@@ -3,9 +3,9 @@
 * @author Abdul Zia (abdul@abdulzia.com)
 * @brief General Operations Over Basic Embedded Radio Packet Serializer/Deserializer
 * @version 1.0.0
-* @date 2025-12-06
+* @date 02-10-2026
 * 
-* @copyright Copyright (c) 2025 Abdul Zia. All rights reserved.
+* @copyright Copyright (c) 2026 Abdul Zia. All rights reserved.
 * 
 */
 
@@ -106,7 +106,7 @@ int goober_deserialize(uint8_t *incoming_buffer, size_t incoming_buffer_size, go
  * @param serialized_packet_size Pointer to the size of the serialized packet in bytes.
  * @return int Error code. 0 if successful, otherwise a negative error code.
  */
-int goober_serialize(goober_header_t header, uint8_t *payload_buffer, size_t payload_size, uint8_t *serialized_buffer, size_t serialized_buffer_size, size_t *serialized_packet_size)
+int goober_serialize(goober_header_t header, uint8_t *payload_buffer, size_t payload_size, uint8_t *serialized_buffer, size_t serialized_buffer_size, uint8_t *serialized_packet_size)
 {
     if (payload_buffer == NULL || serialized_buffer == NULL || serialized_packet_size == NULL) { // is the input invalid?
         return GOOBER_ERROR_INVALID_INPUT;
